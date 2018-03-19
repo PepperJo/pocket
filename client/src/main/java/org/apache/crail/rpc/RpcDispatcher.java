@@ -36,6 +36,7 @@ public class RpcDispatcher implements RpcConnection {
 	private RpcConnection[] connections;
 	private int setBlockIndex;
 	private int getDataNodeIndex;
+	private int dumpNameNodeIndex;
 
 	public RpcDispatcher(ConcurrentLinkedQueue<RpcConnection> connectionList) {
 		connections = new RpcConnection[connectionList.size()];
@@ -44,6 +45,7 @@ public class RpcDispatcher implements RpcConnection {
 		}
 		this.setBlockIndex = 0;
 		this.getDataNodeIndex = 0;
+		this.dumpNameNodeIndex = 0;
 	}
 
 	@Override
@@ -127,7 +129,8 @@ public class RpcDispatcher implements RpcConnection {
 
 	@Override
 	public RpcFuture<RpcVoid> dumpNameNode() throws Exception {
-		return connections[0].dumpNameNode();
+		dumpNameNodeIndex = (dumpNameNodeIndex + 1) % connections.length;
+		return connections[dumpNameNodeIndex].dumpNameNode();
 	}
 
 	@Override
