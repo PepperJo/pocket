@@ -85,7 +85,12 @@ public class CrailConstants {
 	public static String CACHE_IMPL = "org.apache.crail.memory.MappedBufferCache";
 	
 	public static final String LOCATION_MAP_KEY = "crail.locationmap";
-	public static String LOCATION_MAP = "";		
+	public static String LOCATION_MAP = "";
+
+	// for pocket, we have block cache disabled until we figure out
+	// what and how we want to purge it when a datanode goes down.
+	public static final String CLIENT_BLOCKCACHE_ENABLE_KEY = "crail.client.blockcache.enable";
+	public static boolean CLIENT_BLOCKCACHE_ENABLE = false;
 	
 	//namenode interface
 	public static final String NAMENODE_ADDRESS_KEY = "crail.namenode.address";
@@ -177,9 +182,11 @@ public class CrailConstants {
 		}
 		if (conf.get(LOCATION_MAP_KEY) != null) {
 			LOCATION_MAP = conf.get(LOCATION_MAP_KEY);
-		}		
-		
-		//namenode interface
+		}
+		if (conf.get(CLIENT_BLOCKCACHE_ENABLE_KEY) != null) {
+			CLIENT_BLOCKCACHE_ENABLE = conf.getBoolean(CLIENT_BLOCKCACHE_ENABLE_KEY,false);
+		}
+			//namenode interface
 		if (conf.get(NAMENODE_ADDRESS_KEY) != null) {
 			NAMENODE_ADDRESS = conf.get(NAMENODE_ADDRESS_KEY);
 		} 
@@ -243,6 +250,7 @@ public class CrailConstants {
 		LOG.info(STORAGE_CLASSES_KEY + " " + STORAGE_CLASSES);
 		LOG.info(STORAGE_ROOTCLASS_KEY + " " + STORAGE_ROOTCLASS);
 		LOG.info(STORAGE_KEEPALIVE_KEY + " " + STORAGE_KEEPALIVE);
+		LOG.info(CLIENT_BLOCKCACHE_ENABLE_KEY + " "+ CLIENT_BLOCKCACHE_ENABLE);
 	}
 	
 	public static void verify() throws IOException {

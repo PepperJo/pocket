@@ -21,6 +21,7 @@ package org.apache.crail.utils;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.crail.conf.CrailConstants;
 import org.apache.crail.rpc.RpcFuture;
 import org.apache.crail.rpc.RpcGetBlock;
 
@@ -61,7 +62,9 @@ public class NextBlockCache {
 		}
 
 		public void put(long blockstart, RpcFuture<RpcGetBlock> block){
-			this.fileBlockCache.putIfAbsent(blockstart, block);
+			if(CrailConstants.CLIENT_BLOCKCACHE_ENABLE){
+				this.fileBlockCache.putIfAbsent(blockstart, block);
+			} // otherwise, do nothing
 		}
 		
 		public RpcFuture<RpcGetBlock> get(long blockstart){
@@ -69,7 +72,7 @@ public class NextBlockCache {
 		}
 
 		public boolean containsKey(long blockstart) {
-			return this.fileBlockCache.containsKey(blockstart);
+			return CrailConstants.CLIENT_BLOCKCACHE_ENABLE && this.fileBlockCache.containsKey(blockstart);
 		}
 
 		public long getFd() {

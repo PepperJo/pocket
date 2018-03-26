@@ -21,6 +21,7 @@ package org.apache.crail.utils;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.crail.conf.CrailConstants;
 import org.apache.crail.metadata.BlockInfo;
 
 public class BlockCache {
@@ -60,7 +61,9 @@ public class BlockCache {
 		}
 
 		public void put(long blockstart, BlockInfo block){
-			this.fileBlockCache.put(blockstart, block);
+			if(CrailConstants.CLIENT_BLOCKCACHE_ENABLE) {
+				this.fileBlockCache.put(blockstart, block);
+			} // otherwise don't do anything
 		}
 		
 		public BlockInfo get(long blockstart){
@@ -68,7 +71,7 @@ public class BlockCache {
 		}
 
 		public boolean containsKey(long blockstart) {
-			return this.fileBlockCache.containsKey(blockstart);
+			return CrailConstants.CLIENT_BLOCKCACHE_ENABLE && this.fileBlockCache.containsKey(blockstart);
 		}
 
 		public long getFd() {
