@@ -19,6 +19,7 @@
 
 package org.apache.crail.namenode.rpc.tcp;
 
+import com.ibm.narpc.NaRPCServerChannel;
 import com.ibm.narpc.NaRPCService;
 
 import org.apache.crail.rpc.RpcErrors;
@@ -26,6 +27,8 @@ import org.apache.crail.rpc.RpcNameNodeService;
 import org.apache.crail.rpc.RpcProtocol;
 import org.apache.crail.utils.CrailUtils;
 import org.slf4j.Logger;
+
+import java.io.IOException;
 
 public class TcpRpcDispatcher implements NaRPCService<TcpNameNodeRequest, TcpNameNodeResponse> {
 	public static final Logger LOG = CrailUtils.getLogger();
@@ -99,5 +102,23 @@ public class TcpRpcDispatcher implements NaRPCService<TcpNameNodeRequest, TcpNam
 		}
 		
 		return response;		
+	}
+
+	@Override
+	public void addEndpoint(NaRPCServerChannel newConnection) {
+		try {
+			LOG.info("A new connection arrives from : " + newConnection.address());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public void removeEndpoint(NaRPCServerChannel closedConnection) {
+		try {
+			LOG.info("Connection closed from : " + closedConnection.address());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }

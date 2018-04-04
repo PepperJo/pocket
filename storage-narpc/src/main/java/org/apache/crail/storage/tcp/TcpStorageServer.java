@@ -151,7 +151,17 @@ public class TcpStorageServer implements Runnable, StorageServer, NaRPCService<T
 			return new TcpStorageResponse(TcpStorageProtocol.RET_RPC_UNKNOWN);
 		}
 	}
-	
+
+	@Override
+	public void addEndpoint(NaRPCServerChannel newConnection) {
+		// nothing to do here for now
+	}
+
+	@Override
+	public void removeEndpoint(NaRPCServerChannel closedConnection) {
+		// nothing to do here for now
+	}
+
 	private void clean(){
 		File dataDir = new File(dataDirPath);
 		if (!dataDir.exists()){
