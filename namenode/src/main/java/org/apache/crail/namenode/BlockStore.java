@@ -51,8 +51,12 @@ public class BlockStore {
 	}
 
 	public boolean regionExists(BlockInfo region) {
-		int storageClass = region.getDnInfo().getStorageClass();
-		return storageClasses[storageClass].regionExists(region);
+		if(CrailConstants.NAMENODE_REPLAY_REGION) {
+			int storageClass = region.getDnInfo().getStorageClass();
+			return storageClasses[storageClass].regionExists(region);
+		} else {
+			return false;
+		}
 	}
 
 	public short updateRegion(BlockInfo region) {
