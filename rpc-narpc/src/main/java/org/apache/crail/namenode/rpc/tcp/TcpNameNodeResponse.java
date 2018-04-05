@@ -44,7 +44,7 @@ public class TcpNameNodeResponse extends RpcResponseMessage implements RpcNameNo
 	private RpcResponseMessage.GetLocationRes getLocationRes;	
 	private RpcResponseMessage.GetDataNodeRes getDataNodeRes;
 	private RpcResponseMessage.PingNameNodeRes pingNameNodeRes;
-	
+
 	public TcpNameNodeResponse() {
 		this.type = 0;
 		this.error = 0;
@@ -153,7 +153,7 @@ public class TcpNameNodeResponse extends RpcResponseMessage implements RpcNameNo
 	public void update(ByteBuffer buffer){
 		this.type = buffer.getShort();
 		this.error = buffer.getShort();
-		
+
 		switch(type){
 		case RpcProtocol.RES_VOID:
 			voidRes.update(buffer);

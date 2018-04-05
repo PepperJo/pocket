@@ -60,7 +60,10 @@ public interface RpcConnection {
 
 	public abstract RpcFuture<RpcPing> pingNameNode()
 			throws Exception;
-	
+
+	public abstract RpcFuture<RpcVoid> ioctlNameNode(IOCtlCommand cmd)
+			throws IOException;
+
 	public abstract void close() throws Exception;
 	
 	@SuppressWarnings("unchecked")

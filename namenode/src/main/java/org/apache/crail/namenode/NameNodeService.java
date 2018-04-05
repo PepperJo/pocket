@@ -20,6 +20,7 @@
 package org.apache.crail.namenode;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.URI;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,14 +33,10 @@ import org.apache.crail.metadata.BlockInfo;
 import org.apache.crail.metadata.DataNodeInfo;
 import org.apache.crail.metadata.FileInfo;
 import org.apache.crail.metadata.FileName;
-import org.apache.crail.rpc.RpcErrors;
-import org.apache.crail.rpc.RpcNameNodeService;
-import org.apache.crail.rpc.RpcNameNodeState;
-import org.apache.crail.rpc.RpcProtocol;
-import org.apache.crail.rpc.RpcRequestMessage;
-import org.apache.crail.rpc.RpcResponseMessage;
+import org.apache.crail.rpc.*;
 import org.apache.crail.utils.CrailUtils;
 import org.slf4j.Logger;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class NameNodeService implements RpcNameNodeService, Sequencer {
 	private static final Logger LOG = CrailUtils.getLogger();
@@ -430,6 +427,8 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 		
 		//get params
 		BlockInfo region = new BlockInfo();
+		// atr: the call from the datanode to here to set block is more like SET_REGION, we should rename it.
+		// TODO: make a new type SET_REGION
 		region.setBlockInfo(request.getBlockInfo());
 		
 		short error = RpcErrors.ERR_OK;
@@ -571,9 +570,29 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 		
 		return RpcErrors.ERR_OK;
 	}
-	
-	
+
+	@Override
+	public short ioctl(RpcRequestMessage.IoctlNameNodeReq request, RpcResponseMessage.VoidRes response, RpcNameNodeState errorState) throws Exception {
+		System.err.println("I am here, about to implement ioctl service");
+		switch (request.getOpcode()){
+			case IOCtlCommand.NOP :
+				return RpcErrors.ERR_OK;
+
+			case IOCtlCommand.DN_REMOVE :
+				IOCtlCommand.RemoveDataNode dn = (IOCtlCommand.RemoveDataNode) request.getIOCtlCommand();
+				return prepareDataNodeForRemoval(dn.getIPAddress());
+
+			default: throw new NotImplementedException();
+		}
+	}
+
+
 	//--------------- helper functions
+
+	private short prepareDataNodeForRemoval(InetAddress address){
+		System.err.println("Removing data node: " + address);
+		return RpcErrors.ERR_OK;
+	}
 	
 	void appendToDeleteQueue(AbstractNode fileInfo) throws Exception {
 		if (fileInfo != null) {

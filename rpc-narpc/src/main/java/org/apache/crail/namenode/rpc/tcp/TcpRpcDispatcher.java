@@ -84,9 +84,12 @@ public class TcpRpcDispatcher implements NaRPCService<TcpNameNodeRequest, TcpNam
 			case RpcProtocol.CMD_PING_NAMENODE:
 				error = service.ping(request.pingNameNode(), response.pingNameNode(), response);
 				break;
+			case RpcProtocol.CMD_IOCTL_NAMENODE:
+				error = service.ioctl(request.ioctlNameNode(), response.getVoid(), response);
+				break;
 			default:
 				error = RpcErrors.ERR_INVALID_RPC_CMD;
-				LOG.info("Rpc command not valid, opcode " + request.getCmd());
+				LOG.error("Rpc command not valid, opcode " + request.getCmd());
 			}
 		} catch(Exception e){
 			error = RpcErrors.ERR_UNKNOWN;

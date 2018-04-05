@@ -64,10 +64,7 @@ public class DataNodeBlocks extends DataNodeInfo {
 	}
 
 	public boolean regionExists(BlockInfo region) {
-		if (regions.containsKey(region.getLba())){
-			return true;
-		} 
-		return false;
+		return regions.containsKey(region.getLba());
 	}
 
 	public short updateRegion(BlockInfo region) {

@@ -146,6 +146,12 @@ class StorageClass {
 		return RpcErrors.ERR_OK;
 	}
 
+	void removeDatanode(DataNodeInfo dn) throws UnknownHostException {
+		long dnAddress = dn.key();
+		membership.remove(dnAddress);
+		System.err.println("DataNode: " + dn.toString() + " removed from the list");
+	}
+
 	NameNodeBlockInfo getBlock(int affinity) throws InterruptedException {
 		NameNodeBlockInfo block = null;
 		if (affinity == 0) {
@@ -168,13 +174,10 @@ class StorageClass {
 		DataNodeBlocks current = membership.putIfAbsent(dataNode.key(), dataNode);
 		if (current != null) {
 			return RpcErrors.ERR_DATANODE_NOT_REGISTERED;
-		} 
-		
+		}
 		// current == null, datanode not in set, adding it now
 		_addDataNode(dataNode);
-		
 		return RpcErrors.ERR_OK;
-
 	}
 	
 	//---------------

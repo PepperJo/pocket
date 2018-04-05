@@ -50,17 +50,7 @@ import org.apache.crail.metadata.BlockInfo;
 import org.apache.crail.metadata.DataNodeInfo;
 import org.apache.crail.metadata.FileInfo;
 import org.apache.crail.metadata.FileName;
-import org.apache.crail.rpc.RpcClient;
-import org.apache.crail.rpc.RpcConnection;
-import org.apache.crail.rpc.RpcCreateFile;
-import org.apache.crail.rpc.RpcDeleteFile;
-import org.apache.crail.rpc.RpcDispatcher;
-import org.apache.crail.rpc.RpcErrors;
-import org.apache.crail.rpc.RpcFuture;
-import org.apache.crail.rpc.RpcGetFile;
-import org.apache.crail.rpc.RpcGetLocation;
-import org.apache.crail.rpc.RpcPing;
-import org.apache.crail.rpc.RpcRenameFile;
+import org.apache.crail.rpc.*;
 import org.apache.crail.storage.StorageClient;
 import org.apache.crail.utils.BlockCache;
 import org.apache.crail.utils.BufferCheckpoint;
@@ -476,6 +466,15 @@ public class CoreDataStore extends CrailStore {
 			LOG.info("Ping: " + RpcErrors.messages[pingRes.getError()]);
 			throw new IOException(RpcErrors.messages[pingRes.getError()]);
 		}		
+	}
+
+	public void ioctlNameNode(IOCtlCommand cmd) throws Exception {
+		RpcVoid voidRes = rpcConnection.ioctlNameNode(cmd).get(CrailConstants.RPC_TIMEOUT,
+				TimeUnit.MILLISECONDS);
+		if (voidRes.getError() != RpcErrors.ERR_OK) {
+			LOG.info("IOCtl: " + RpcErrors.messages[voidRes.getError()]);
+			throw new IOException(RpcErrors.messages[voidRes.getError()]);
+		}
 	}
 
 	public CrailBuffer allocateBuffer() throws IOException {

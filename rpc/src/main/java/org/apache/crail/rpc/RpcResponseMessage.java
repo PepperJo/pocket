@@ -26,22 +26,13 @@ import java.nio.ByteBuffer;
 import org.apache.crail.metadata.BlockInfo;
 import org.apache.crail.metadata.DataNodeStatistics;
 import org.apache.crail.metadata.FileInfo;
-import org.apache.crail.rpc.RpcCreateFile;
-import org.apache.crail.rpc.RpcDeleteFile;
-import org.apache.crail.rpc.RpcGetBlock;
-import org.apache.crail.rpc.RpcGetDataNode;
-import org.apache.crail.rpc.RpcGetFile;
-import org.apache.crail.rpc.RpcGetLocation;
-import org.apache.crail.rpc.RpcPing;
-import org.apache.crail.rpc.RpcRenameFile;
-import org.apache.crail.rpc.RpcVoid;
 
 public class RpcResponseMessage {
 	public static class VoidRes implements RpcProtocol.NameNodeRpcMessage, RpcVoid {
 		private short error;
 		
 		public VoidRes() {
-			this.error = 0;
+			this.error = -1;
 		}
 		
 		public int size() {

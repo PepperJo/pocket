@@ -185,4 +185,16 @@ public class TcpRpcConnection implements RpcConnection {
 		return new TcpFuture<RpcPing>(future, resp);
 	}
 
+	@Override
+	public RpcFuture<RpcVoid> ioctlNameNode(IOCtlCommand cmd) throws IOException {
+		RpcRequestMessage.IoctlNameNodeReq req = new RpcRequestMessage.IoctlNameNodeReq();
+		req.setRemoveDatanode((IOCtlCommand.RemoveDataNode) cmd);
+		RpcResponseMessage.VoidRes resp = new RpcResponseMessage.VoidRes();
+
+		TcpNameNodeRequest request = new TcpNameNodeRequest(req);
+		TcpNameNodeResponse response = new TcpNameNodeResponse(resp);
+		request.setCommand(RpcProtocol.CMD_IOCTL_NAMENODE);
+		NaRPCFuture<TcpNameNodeRequest, TcpNameNodeResponse> future = endpoint.issueRequest(request, response);
+		return new TcpFuture<RpcVoid>(future, resp);
+	}
 }

@@ -19,6 +19,7 @@
 
 package org.apache.crail.rpc;
 
+import java.io.IOException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 
@@ -572,7 +573,64 @@ public class RpcRequestMessage {
 		public void update(ByteBuffer buffer) {
 			op = buffer.getInt();
 		}		
-	}	
-	
+	}
 
+	public static class IoctlNameNodeReq implements RpcProtocol.NameNodeRpcMessage {
+		// this much data is always sent max?
+		public static int CSIZE = RenameFileReq.CSIZE;
+		protected IOCtlCommand cmd;
+		protected int opcode;
+
+		public IoctlNameNodeReq(){
+			this.opcode = IOCtlCommand.NOP;
+			this.cmd = new IOCtlCommand.NoOpCommand();
+		}
+
+		public void setRemoveDatanode(IOCtlCommand.RemoveDataNode ops) {
+			this.opcode = IOCtlCommand.DN_REMOVE;
+			this.cmd = ops;
+		}
+
+		public void setDumpNamenode() {
+			this.opcode = IOCtlCommand.NN_DUMP;
+		}
+
+		public int getOpcode() {
+			return opcode;
+		}
+
+		public int size() {
+			return 4 + this.cmd.getSize();
+		}
+
+		public short getType(){
+			return RpcProtocol.REQ_IOCTL_NAMENODE;
+		}
+
+		public int write(ByteBuffer buffer) {
+			buffer.putInt(opcode);
+			this.cmd.write(buffer);
+			return size();
+		}
+
+		public void update(ByteBuffer buffer) throws IOException {
+			this.opcode = buffer.getInt();
+			/* which type ? */
+			switch (this.opcode) {
+				case IOCtlCommand.DN_REMOVE :
+					this.cmd = new IOCtlCommand.RemoveDataNode();
+					break;
+				case IOCtlCommand.NN_DUMP :
+					this.cmd = new IOCtlCommand.NoOpCommand();
+					break;
+				default:
+					throw new IOException("NYI: ioctl opcode " + this.opcode);
+			}
+			this.cmd.update(buffer);
+		}
+
+		public IOCtlCommand getIOCtlCommand(){
+			return this.cmd;
+		}
+	}
 }
