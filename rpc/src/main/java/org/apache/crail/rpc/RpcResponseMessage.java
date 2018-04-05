@@ -551,15 +551,16 @@ public class RpcResponseMessage {
 	
 	public static class GetDataNodeRes implements RpcProtocol.NameNodeRpcMessage, RpcGetDataNode {
 		public static int CSIZE = DataNodeStatistics.CSIZE;
-		
+		private short error;
 		private DataNodeStatistics statistics;
 
 		public GetDataNodeRes() {
 			this.statistics = new DataNodeStatistics();
+			this.error = -1;
 		}
 		
 		public void setError(short error) {
-			
+			this.error = error;
 		}
 
 		public int size() {
@@ -592,7 +593,7 @@ public class RpcResponseMessage {
 		}
 		
 		public short getError(){
-			return 0;
+			return this.error;
 		}
 
 		public void setServiceId(long serviceId) {
