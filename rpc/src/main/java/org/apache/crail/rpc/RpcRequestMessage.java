@@ -576,10 +576,8 @@ public class RpcRequestMessage {
 	}
 
 	public static class IoctlNameNodeReq implements RpcProtocol.NameNodeRpcMessage {
-		// this much data is always sent max?
-		public static int CSIZE = RenameFileReq.CSIZE;
-		protected IOCtlCommand cmd;
-		protected int opcode;
+		private IOCtlCommand cmd;
+		private byte opcode;
 
 		public IoctlNameNodeReq(){
 			this.opcode = IOCtlCommand.NOP;
@@ -591,41 +589,51 @@ public class RpcRequestMessage {
 			this.cmd = ops;
 		}
 
-		public void setDumpNamenode() {
-			this.opcode = IOCtlCommand.NN_DUMP;
-		}
-
-		public int getOpcode() {
-			return opcode;
+		public byte getOpcode() {
+			return this.opcode;
 		}
 
 		public int size() {
-			return 4 + this.cmd.getSize();
+			// we write one byte + command
+			return Byte.BYTES + this.cmd.getSize();
 		}
 
 		public short getType(){
 			return RpcProtocol.REQ_IOCTL_NAMENODE;
 		}
 
-		public int write(ByteBuffer buffer) {
-			buffer.putInt(opcode);
+		public int write(ByteBuffer buffer) throws IOException {
+			int size = size();
+			if(buffer.remaining() < size){
+				throw new IOException("Buffer.remaining " + buffer.remaining() + " is less than required " + size + " bytes");
+			}
+			buffer.put(opcode);
 			this.cmd.write(buffer);
-			return size();
+			return size;
+		}
+
+		private void checkCmdSize(int remaining) throws IOException {
+			if(this.cmd.getSize() > remaining)
+				throw new IOException("Buffer.remaining " + remaining + " is less than required " + this.cmd.getSize() + " bytes");
 		}
 
 		public void update(ByteBuffer buffer) throws IOException {
-			this.opcode = buffer.getInt();
+			if(buffer.remaining() < Byte.BYTES){
+				throw new IOException("Cannot even read a byte of opcode from the passed ByteBuffer");
+			}
+			this.opcode = buffer.get();
 			/* which type ? */
 			switch (this.opcode) {
-				case IOCtlCommand.DN_REMOVE :
+				case IOCtlCommand.DN_REMOVE:
 					this.cmd = new IOCtlCommand.RemoveDataNode();
 					break;
-				case IOCtlCommand.NN_DUMP :
+				case IOCtlCommand.NOP:
 					this.cmd = new IOCtlCommand.NoOpCommand();
 					break;
 				default:
 					throw new IOException("NYI: ioctl opcode " + this.opcode);
 			}
+			checkCmdSize(buffer.remaining());
 			this.cmd.update(buffer);
 		}
 

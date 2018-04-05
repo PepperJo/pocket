@@ -1,5 +1,6 @@
 package org.apache.crail.rpc;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
@@ -9,12 +10,10 @@ import java.nio.ByteBuffer;
  */
 public abstract class IOCtlCommand {
     public static final byte NOP       = 1;
-    public static final byte NN_PING   = 2;
-    public static final byte NN_DUMP   = 3;
-    public static final byte DN_REMOVE = 4;
+    public static final byte DN_REMOVE = 2;
 
-    public abstract int write(ByteBuffer buffer);
-    public abstract void update(ByteBuffer buffer);
+    public abstract int write(ByteBuffer buffer) throws IOException;
+    public abstract void update(ByteBuffer buffer) throws IOException;
     public abstract int getSize();
 
     public static class RemoveDataNode extends IOCtlCommand {
@@ -34,14 +33,20 @@ public abstract class IOCtlCommand {
             return this.address;
         }
 
-        public int write(ByteBuffer buffer) {
+        public int write(ByteBuffer buffer) throws IOException {
             byte[] x = this.address.getAddress();
+            if(x.length > buffer.remaining()) {
+                throw new IOException("Write ByteBuffer is too small, remaining " + buffer.remaining() + " expected, " + x.length + " bytes");
+            }
             buffer.put(x);
             return x.length;
         }
 
-        public void update(ByteBuffer buffer) {
-            byte[] barr = new byte[4];
+        public void update(ByteBuffer buffer) throws IOException {
+            byte[] barr = new byte[getSize()];
+            if(getSize() > buffer.remaining()) {
+                throw new IOException("Read ByteBuffer is too small, remaining " + buffer.remaining() + " expected, " + barr.length + " bytes");
+            }
             buffer.get(barr);
             try {
                 this.address = InetAddress.getByAddress(barr);

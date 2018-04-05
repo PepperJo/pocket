@@ -574,8 +574,9 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 	@Override
 	public short ioctl(RpcRequestMessage.IoctlNameNodeReq request, RpcResponseMessage.VoidRes response, RpcNameNodeState errorState) throws Exception {
 		System.err.println("I am here, about to implement ioctl service");
-		switch (request.getOpcode()){
-			case IOCtlCommand.NOP :
+		byte opcode = request.getOpcode();
+		switch (opcode) {
+			case IOCtlCommand.NOP:
 				return RpcErrors.ERR_OK;
 
 			case IOCtlCommand.DN_REMOVE :
