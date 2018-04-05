@@ -472,8 +472,7 @@ public class CoreDataStore extends CrailStore {
 		RpcVoid voidRes = rpcConnection.ioctlNameNode(cmd).get(CrailConstants.RPC_TIMEOUT,
 				TimeUnit.MILLISECONDS);
 		if (voidRes.getError() != RpcErrors.ERR_OK) {
-			LOG.info("IOCtl: " + RpcErrors.messages[voidRes.getError()]);
-			throw new IOException(RpcErrors.messages[voidRes.getError()]);
+			throw new IOException("IOCtl: " + RpcErrors.messages[voidRes.getError()]);
 		}
 	}
 

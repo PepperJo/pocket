@@ -45,6 +45,11 @@ public class BlockStore {
 		}		
 	}
 
+	public short removeDN(DataNodeInfo dn) {
+		int storageClass = dn.getStorageClass();
+		return storageClasses[storageClass].removeDatanode(dn);
+	}
+
 	public short addBlock(NameNodeBlockInfo blockInfo) throws UnknownHostException {
 		int storageClass = blockInfo.getDnInfo().getStorageClass();
 		return storageClasses[storageClass].addBlock(blockInfo);
@@ -64,7 +69,7 @@ public class BlockStore {
 		return storageClasses[storageClass].updateRegion(region);
 	}
 
-	public NameNodeBlockInfo getBlock(int storageClass, int locationAffinity) throws InterruptedException {
+	private NameNodeBlockInfo _getBlock(int storageClass, int locationAffinity) throws InterruptedException {
 		NameNodeBlockInfo block = null;
 		if (storageClass > 0){
 			if (storageClass < storageClasses.length){
@@ -82,6 +87,17 @@ public class BlockStore {
 			}
 		}
 		
+		return block;
+	}
+
+	public NameNodeBlockInfo getBlock(int storageClass, int locationAffinity) throws InterruptedException {
+		boolean found = false;
+		NameNodeBlockInfo block = null;
+		while(!found) {
+			block = _getBlock(storageClass, locationAffinity);
+			if(block != null && !block.isDeleted())
+				found = true;
+		}
 		return block;
 	}
 
@@ -146,10 +162,15 @@ class StorageClass {
 		return RpcErrors.ERR_OK;
 	}
 
-	void removeDatanode(DataNodeInfo dn) throws UnknownHostException {
+	short removeDatanode(DataNodeInfo dn) {
 		long dnAddress = dn.key();
-		membership.remove(dnAddress);
-		System.err.println("DataNode: " + dn.toString() + " removed from the list");
+		DataNodeBlocks old = membership.remove(dnAddress);
+		if(old == null) {
+			System.err.println("DataNode: " + dn.toString() + " not found");
+		} else {
+			System.err.println("DataNode: " + dn.toString() + " removed from the list");
+		}
+		return RpcErrors.ERR_OK;
 	}
 
 	NameNodeBlockInfo getBlock(int affinity) throws InterruptedException {

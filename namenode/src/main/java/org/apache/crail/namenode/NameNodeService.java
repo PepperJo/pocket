@@ -408,6 +408,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 		//rpc
 		DataNodeBlocks dnInfoNn = blockStore.getDataNode(dnInfo);
 		if (dnInfoNn == null){
+			System.err.println(" Datanode no longer registered ");
 			return RpcErrors.ERR_DATANODE_NOT_REGISTERED;
 		}
 		
@@ -430,6 +431,8 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 		// atr: the call from the datanode to here to set block is more like SET_REGION, we should rename it.
 		// TODO: make a new type SET_REGION
 		region.setBlockInfo(request.getBlockInfo());
+
+		System.err.println(" ### " + region.getDnInfo().toString());
 		
 		short error = RpcErrors.ERR_OK;
 		if (blockStore.regionExists(region)){
@@ -573,7 +576,9 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 
 	@Override
 	public short ioctl(RpcRequestMessage.IoctlNameNodeReq request, RpcResponseMessage.VoidRes response, RpcNameNodeState errorState) throws Exception {
-		System.err.println("I am here, about to implement ioctl service");
+		if (!RpcProtocol.verifyProtocol(RpcProtocol.CMD_IOCTL_NAMENODE, request, response)){
+			return RpcErrors.ERR_PROTOCOL_MISMATCH;
+		}
 		byte opcode = request.getOpcode();
 		switch (opcode) {
 			case IOCtlCommand.NOP:
@@ -592,7 +597,10 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 
 	private short prepareDataNodeForRemoval(InetAddress address){
 		System.err.println("Removing data node: " + address);
-		return RpcErrors.ERR_OK;
+		//int storageType, int storageClass, int locationClass, byte[] ipAddress, int port
+		DataNodeInfo dnInfo = new DataNodeInfo(0, 0, 0, address.getAddress(), 50020);
+		// BlockStore is the key entry point
+		return blockStore.removeDN(dnInfo);
 	}
 	
 	void appendToDeleteQueue(AbstractNode fileInfo) throws Exception {

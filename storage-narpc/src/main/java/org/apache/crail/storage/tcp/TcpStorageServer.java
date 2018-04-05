@@ -183,8 +183,14 @@ public class TcpStorageServer implements Runnable, StorageServer, NaRPCService<T
 		List<InterfaceAddress> addresses = netif.getInterfaceAddresses();
 		InetAddress addr = null;
 		for (InterfaceAddress address: addresses){
-			if (address.getBroadcast() != null){
-				InetAddress _addr = address.getAddress();
+			// only ipv4 address have broadcast address, hence this is a crude way to filter
+			// in ipv4 addresses. But loopback also does not have a broadcast address.
+			// hence we make an OR filter
+			boolean isIpv4Address = (address.getBroadcast() != null);
+			InetAddress _addr = address.getAddress();
+			boolean isLoopbackAddress = _addr.isLoopbackAddress();
+			if (isIpv4Address || isLoopbackAddress){
+				//TODO: what to do with interface with multiple IP addresses?
 				addr = _addr;
 			}
 		}		
