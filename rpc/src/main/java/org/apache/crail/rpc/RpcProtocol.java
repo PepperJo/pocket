@@ -66,6 +66,7 @@ public class RpcProtocol extends RpcErrors {
 	public static final short RES_GET_LOCATION = 7;
 	public static final short RES_PING_NAMENODE = 9;
 	public static final short RES_GET_DATANODE = 10;
+	public static final short RES_IOCTL_NAMENODE = 11;
 
 	static {
 		requestTypes[0] = 0;
@@ -94,8 +95,7 @@ public class RpcProtocol extends RpcErrors {
 		responseTypes[CMD_DUMP_NAMENODE] = RES_VOID;
 		responseTypes[CMD_PING_NAMENODE] = RES_PING_NAMENODE;	
 		responseTypes[CMD_GET_DATANODE] = RES_GET_DATANODE;
-		// as a response of an ioctl call, we just expect an error code
-		responseTypes[CMD_IOCTL_NAMENODE] = RES_VOID;
+		responseTypes[CMD_IOCTL_NAMENODE] = RES_IOCTL_NAMENODE;
 	}
 	
 

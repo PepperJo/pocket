@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 
+import org.apache.crail.IOCtlResponse;
+import org.apache.crail.RpcIoctl;
 import org.apache.crail.metadata.BlockInfo;
 import org.apache.crail.metadata.DataNodeStatistics;
 import org.apache.crail.metadata.FileInfo;
@@ -635,6 +637,82 @@ public class RpcResponseMessage {
 		
 		public void setData(int data){
 			this.data = data;
+		}
+
+		public short getError(){
+			return error;
+		}
+
+		public void setError(short error) {
+			this.error = error;
+		}
+	}
+
+	public static class IOCtlNameNodeRes implements RpcProtocol.NameNodeRpcMessage, RpcIoctl {
+		private IOCtlResponse resp;
+		private byte opcode;
+		private short error;
+
+		public IOCtlNameNodeRes() {
+			this.resp = new IOCtlResponse.IOCtlEmptyResp();
+			this.opcode = IOCtlCommand.NOP;
+			this.error = -1;
+		}
+
+		public int size() {
+			// we write one byte + command
+			return Byte.BYTES + this.resp.getSize();
+		}
+
+		public short getType(){
+			return RpcProtocol.RES_IOCTL_NAMENODE;
+		}
+
+		public byte getOpcode() {
+			return this.opcode;
+		}
+
+		public int write(ByteBuffer buffer) throws IOException {
+			int size = size();
+			if(buffer.remaining() < size){
+				throw new IOException("Buffer.remaining " + buffer.remaining() + " is less than required " + size + " bytes");
+			}
+			buffer.put(opcode);
+			this.resp.write(buffer);
+			return size;
+		}
+
+		private void checkCmdSize(int remaining) throws IOException {
+			if(this.resp.getSize() > remaining)
+				throw new IOException("Buffer.remaining " + remaining + " is less than required " + this.resp.getSize() + " bytes");
+		}
+
+		public void update(ByteBuffer buffer) throws IOException {
+			if(buffer.remaining() < Byte.BYTES){
+				throw new IOException("Cannot even read a byte of opcode from the passed ByteBuffer");
+			}
+			this.opcode = buffer.get();
+			/* which type ? */
+			switch (this.opcode) {
+				case IOCtlCommand.DN_REMOVE:
+					this.resp = new IOCtlResponse.IOCtlEmptyResp();
+					break;
+				case IOCtlCommand.NOP:
+					this.resp = new IOCtlResponse.IOCtlEmptyResp();
+					break;
+				default:
+					throw new IOException("NYI: ioctl opcode " + this.opcode);
+			}
+			checkCmdSize(buffer.remaining());
+			this.resp.update(buffer);
+		}
+
+		public IOCtlResponse getResponse() {
+			return this.resp;
+		}
+
+		public void setResponse(IOCtlResponse resp){
+			this.resp = resp;
 		}
 
 		public short getError(){

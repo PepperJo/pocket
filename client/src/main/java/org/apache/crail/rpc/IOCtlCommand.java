@@ -73,6 +73,34 @@ public abstract class IOCtlCommand {
         }
     }
 
+    public static class GetClassStatCommand extends IOCtlCommand {
+        public static int CSIZE = 4;
+        private int storageClass;
+
+        public GetClassStatCommand (int storageClass){
+            this.storageClass = storageClass;
+        }
+
+        public int write(ByteBuffer buffer) throws IOException {
+            if(GetClassStatCommand.CSIZE > buffer.remaining()) {
+                throw new IOException("Write ByteBuffer is too small, remaining " + buffer.remaining() + " expected, " + GetClassStatCommand.CSIZE + " bytes");
+            }
+            buffer.putInt(this.storageClass);
+            return GetClassStatCommand.CSIZE;
+        }
+
+        public void update(ByteBuffer buffer) throws IOException {
+            if(GetClassStatCommand.CSIZE > buffer.remaining()) {
+                throw new IOException("Write ByteBuffer is too small, remaining " + buffer.remaining() + " expected, " + GetClassStatCommand.CSIZE + " bytes");
+            }
+            this.storageClass = buffer.getInt();
+        }
+
+        public int getSize(){ return GetClassStatCommand.CSIZE;}
+
+        public String toString(){ return "GetClassStatCommand class: " + this.storageClass;}
+    }
+
     public static class NoOpCommand extends IOCtlCommand {
 
         NoOpCommand(){}

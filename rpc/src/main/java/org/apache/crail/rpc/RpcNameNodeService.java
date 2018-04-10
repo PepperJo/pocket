@@ -68,7 +68,7 @@ public interface RpcNameNodeService {
 			throws Exception;
 
 	public abstract short ioctl(RpcRequestMessage.IoctlNameNodeReq request,
-							   RpcResponseMessage.VoidRes response, RpcNameNodeState errorState)
+							   RpcResponseMessage.IOCtlNameNodeRes response, RpcNameNodeState errorState)
 			throws Exception;
 	
 	@SuppressWarnings("unchecked")

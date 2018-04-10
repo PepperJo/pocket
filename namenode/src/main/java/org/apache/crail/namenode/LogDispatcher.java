@@ -137,7 +137,8 @@ public class LogDispatcher implements RpcNameNodeService {
 	}
 
 	@Override
-	public short ioctl(RpcRequestMessage.IoctlNameNodeReq request, VoidRes response, RpcNameNodeState errorState) throws Exception {
+	public short ioctl(RpcRequestMessage.IoctlNameNodeReq request,
+					   RpcResponseMessage.IOCtlNameNodeRes response, RpcNameNodeState errorState) throws Exception {
 		throw new NotImplementedException();
 	}
 

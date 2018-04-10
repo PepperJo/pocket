@@ -23,6 +23,7 @@ import com.ibm.narpc.NaRPCEndpoint;
 import com.ibm.narpc.NaRPCFuture;
 
 import org.apache.crail.CrailNodeType;
+import org.apache.crail.RpcIoctl;
 import org.apache.crail.metadata.BlockInfo;
 import org.apache.crail.metadata.DataNodeInfo;
 import org.apache.crail.metadata.FileInfo;
@@ -187,15 +188,15 @@ public class TcpRpcConnection implements RpcConnection {
 	}
 
 	@Override
-	public RpcFuture<RpcVoid> ioctlNameNode(IOCtlCommand cmd) throws IOException {
+	public RpcFuture<RpcIoctl> ioctlNameNode(IOCtlCommand cmd) throws IOException {
 		RpcRequestMessage.IoctlNameNodeReq req = new RpcRequestMessage.IoctlNameNodeReq();
 		req.setRemoveDatanode((IOCtlCommand.RemoveDataNode) cmd);
-		RpcResponseMessage.VoidRes resp = new RpcResponseMessage.VoidRes();
+		RpcResponseMessage.IOCtlNameNodeRes resp = new RpcResponseMessage.IOCtlNameNodeRes();
 
 		TcpNameNodeRequest request = new TcpNameNodeRequest(req);
 		TcpNameNodeResponse response = new TcpNameNodeResponse(resp);
 		request.setCommand(RpcProtocol.CMD_IOCTL_NAMENODE);
 		NaRPCFuture<TcpNameNodeRequest, TcpNameNodeResponse> future = endpoint.issueRequest(request, response);
-		return new TcpFuture<RpcVoid>(future, resp);
+		return new TcpFuture<RpcIoctl>(future, resp);
 	}
 }

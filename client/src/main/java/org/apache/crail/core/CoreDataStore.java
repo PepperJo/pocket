@@ -33,16 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.crail.CrailBlockLocation;
-import org.apache.crail.CrailBuffer;
-import org.apache.crail.CrailStore;
-import org.apache.crail.CrailLocationClass;
-import org.apache.crail.CrailNode;
-import org.apache.crail.CrailNodeType;
-import org.apache.crail.CrailResult;
-import org.apache.crail.CrailStatistics;
-import org.apache.crail.CrailStorageClass;
-import org.apache.crail.Upcoming;
+import org.apache.crail.*;
 import org.apache.crail.conf.CrailConfiguration;
 import org.apache.crail.conf.CrailConstants;
 import org.apache.crail.memory.BufferCache;
@@ -468,12 +459,13 @@ public class CoreDataStore extends CrailStore {
 		}		
 	}
 
-	public void ioctlNameNode(IOCtlCommand cmd) throws Exception {
-		RpcVoid voidRes = rpcConnection.ioctlNameNode(cmd).get(CrailConstants.RPC_TIMEOUT,
+	public IOCtlResponse ioctlNameNode(IOCtlCommand cmd) throws Exception {
+		RpcIoctl resp = rpcConnection.ioctlNameNode(cmd).get(CrailConstants.RPC_TIMEOUT,
 				TimeUnit.MILLISECONDS);
-		if (voidRes.getError() != RpcErrors.ERR_OK) {
-			throw new IOException("IOCtl: " + RpcErrors.messages[voidRes.getError()]);
+		if (resp.getError() != RpcErrors.ERR_OK) {
+			throw new IOException("IOCtl: " + RpcErrors.messages[resp.getError()]);
 		}
+		return resp.getResponse();
 	}
 
 	public CrailBuffer allocateBuffer() throws IOException {

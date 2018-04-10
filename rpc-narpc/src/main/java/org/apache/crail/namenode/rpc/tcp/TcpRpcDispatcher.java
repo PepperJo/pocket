@@ -85,7 +85,7 @@ public class TcpRpcDispatcher implements NaRPCService<TcpNameNodeRequest, TcpNam
 				error = service.ping(request.pingNameNode(), response.pingNameNode(), response);
 				break;
 			case RpcProtocol.CMD_IOCTL_NAMENODE:
-				error = service.ioctl(request.ioctlNameNode(), response.getVoid(), response);
+				error = service.ioctl(request.ioctlNameNode(), response.ioCtlNameNode(), response);
 				break;
 			default:
 				error = RpcErrors.ERR_INVALID_RPC_CMD;

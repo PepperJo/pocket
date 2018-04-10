@@ -584,7 +584,8 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 	}
 
 	@Override
-	public short ioctl(RpcRequestMessage.IoctlNameNodeReq request, RpcResponseMessage.VoidRes response, RpcNameNodeState errorState) throws Exception {
+	public short ioctl(RpcRequestMessage.IoctlNameNodeReq request,
+					   RpcResponseMessage.IOCtlNameNodeRes response, RpcNameNodeState errorState) throws Exception {
 		if (!RpcProtocol.verifyProtocol(RpcProtocol.CMD_IOCTL_NAMENODE, request, response)){
 			return RpcErrors.ERR_PROTOCOL_MISMATCH;
 		}

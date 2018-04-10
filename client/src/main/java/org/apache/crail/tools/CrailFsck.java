@@ -141,6 +141,14 @@ public class CrailFsck {
 		System.out.println("Datanode at : " + cmd.getIPAddress() + "/port: " + port + " scheduled for removal successfully");
 		fs.closeFileSystem();
 	}
+
+	public void IOCtlGetClassStats(int storageClass) throws Exception {
+		CrailConfiguration conf = new CrailConfiguration();
+		CrailConstants.updateConstants(conf);
+		CoreDataStore fs = new CoreDataStore(conf);
+		IOCtlCommand.GetClassStatCommand cmd = new IOCtlCommand.GetClassStatCommand(storageClass);
+		fs.closeFileSystem();
+	}
 	
 	public void createDirectory(String filename, int storageClass, int locationClass) throws Exception {
 		System.out.println("createDirectory, filename " + filename + ", storageClass " + storageClass + ", locationClass " + locationClass);
@@ -195,7 +203,7 @@ public class CrailFsck {
 		int storageClass = 0;
 		int locationClass = 0;		
 		
-		Option typeOption = Option.builder("t").desc("type of experiment [getLocations|directoryDump|namenodeDump|blockStatistics|ping|createDirectory|removeDataNode]").hasArg().build();
+		Option typeOption = Option.builder("t").desc("type of experiment [getLocations|directoryDump|namenodeDump|blockStatistics|ping|createDirectory|removeDataNode|getClassStats]").hasArg().build();
 		Option dataNodeOption = Option.builder("d").desc("datanode to be removed").hasArg().build();
 		Option fileOption = Option.builder("f").desc("filename").hasArg().build();
 		Option offsetOption = Option.builder("y").desc("offset into the file").hasArg().build();
@@ -263,6 +271,8 @@ public class CrailFsck {
 			fsck.createDirectory(filename, storageClass, locationClass);
 		} else if (type.equals("removeDataNode")){
 			fsck.IOCtlRemoveDN(datanodeAddress, port);
+		} else if (type.equals("getClassStats")){
+			fsck.IOCtlGetClassStats(storageClass);
 		} else {
 			HelpFormatter formatter = new HelpFormatter();
 			formatter.printHelp("crail fsck", options);
