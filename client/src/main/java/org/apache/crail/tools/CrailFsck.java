@@ -200,7 +200,8 @@ public class CrailFsck {
 		Option offsetOption = Option.builder("y").desc("offset into the file").hasArg().build();
 		Option lengthOption = Option.builder("l").desc("length of the file [bytes]").hasArg().build();
 		Option storageOption = Option.builder("c").desc("storageClass for file [1..n]").hasArg().build();
-		Option locationOption = Option.builder("p").desc("locationClass for file [1..n]").hasArg().build();		
+		Option locationOption = Option.builder("p").desc("locationClass for file [1..n]").hasArg().build();
+		Option helpOption = Option.builder("h").desc("show help").build();
 		
 		Options options = new Options();
 		options.addOption(dataNodeOption);
@@ -209,7 +210,8 @@ public class CrailFsck {
 		options.addOption(offsetOption);
 		options.addOption(lengthOption);
 		options.addOption(storageOption);
-		options.addOption(locationOption);		
+		options.addOption(locationOption);
+		options.addOption(helpOption);
 		
 		CommandLineParser parser = new DefaultParser();
 		CommandLine line = parser.parse(options, Arrays.copyOfRange(args, 0, args.length));
@@ -221,7 +223,6 @@ public class CrailFsck {
 		}
 		if (line.hasOption(dataNodeOption.getOpt())) {
 			datanodeAddress = InetAddress.getByName(line.getOptionValue(dataNodeOption.getOpt()));
-			System.err.println("Removing datanode: " + datanodeAddress);
 		}
 		if (line.hasOption(offsetOption.getOpt())) {
 			offset = Long.parseLong(line.getOptionValue(offsetOption.getOpt()));
@@ -234,7 +235,12 @@ public class CrailFsck {
 		}
 		if (line.hasOption(locationOption.getOpt())) {
 			locationClass = Integer.parseInt(line.getOptionValue(locationOption.getOpt()));
-		}			
+		}
+		if(line.hasOption(helpOption.getOpt())){
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp("crail fsck", options);
+			System.exit(0);
+		}
 		
 		CrailFsck fsck = new CrailFsck();
 		if (type.equals("getLocations")){
