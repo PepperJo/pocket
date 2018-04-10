@@ -1,16 +1,14 @@
 package org.apache.crail.namenode;
 
 import org.apache.crail.conf.CrailConstants;
-import org.apache.crail.metadata.BlockInfo;
 import org.apache.crail.metadata.DataNodeInfo;
 import org.apache.crail.rpc.RpcErrors;
 import org.apache.crail.utils.AtomicIntegerModulo;
 import org.apache.crail.utils.CrailUtils;
 import org.slf4j.Logger;
 
-import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -20,37 +18,24 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class PocketBlockStore {
     private static final Logger LOG = CrailUtils.getLogger();
 
+    // this is the top level indexing based upon the storage classes like NVMe or DRAM
     private PocketStorageClass[] storageClasses;
 
-    public PocketBlockStore() {
+    PocketBlockStore() {
         storageClasses = new PocketStorageClass[CrailConstants.STORAGE_CLASSES];
         for (int i = 0; i < CrailConstants.STORAGE_CLASSES; i++) {
             this.storageClasses[i] = new PocketStorageClass(i);
         }
     }
 
-    public short removeDN(DataNodeInfo dn) {
+    short removeDN(DataNodeInfo dn) throws Exception {
         int storageClass = dn.getStorageClass();
         return storageClasses[storageClass].removeDatanode(dn);
     }
 
-    public short addBlock(NameNodeBlockInfo blockInfo) throws UnknownHostException {
+    short addBlock(NameNodeBlockInfo blockInfo) throws Exception {
         int storageClass = blockInfo.getDnInfo().getStorageClass();
         return storageClasses[storageClass].addBlock(blockInfo);
-    }
-
-    public boolean regionExists(BlockInfo region) {
-        if (CrailConstants.NAMENODE_REPLAY_REGION) {
-            int storageClass = region.getDnInfo().getStorageClass();
-            return storageClasses[storageClass].regionExists(region);
-        } else {
-            return false;
-        }
-    }
-
-    public short updateRegion(BlockInfo region) {
-        int storageClass = region.getDnInfo().getStorageClass();
-        return storageClasses[storageClass].updateRegion(region);
     }
 
     private NameNodeBlockInfo _getBlock(int storageClass, int locationAffinity) throws InterruptedException {
@@ -85,7 +70,7 @@ public class PocketBlockStore {
         return block;
     }
 
-    public DataNodeBlocks getDataNode(DataNodeInfo dnInfo) {
+    DataNodeBlocks getDataNode(DataNodeInfo dnInfo) {
         int storageClass = dnInfo.getStorageClass();
         return storageClasses[storageClass].getDataNode(dnInfo);
     }
@@ -94,59 +79,34 @@ public class PocketBlockStore {
 class PocketStorageClass {
     private static final Logger LOG = CrailUtils.getLogger();
     private int storageClass;
-    private ConcurrentHashMap<Long, DataNodeBlocks> membership;
-    private ConcurrentHashMap<Integer, DataNodeArray> affinitySets;
-    private DataNodeArray anySet;
+    private ConcurrentIndexedHashMap membership;
     private BlockSelection blockSelection;
 
-    public PocketStorageClass(int storageClass) {
+    PocketStorageClass(int storageClass) {
         this.storageClass = storageClass;
-        this.membership = new ConcurrentHashMap<Long, DataNodeBlocks>();
-        this.affinitySets = new ConcurrentHashMap<Integer, DataNodeArray>();
+        this.membership = new ConcurrentIndexedHashMap();
         if (CrailConstants.NAMENODE_BLOCKSELECTION.equalsIgnoreCase("roundrobin")) {
             this.blockSelection = new RoundRobinBlockSelection();
         } else {
             this.blockSelection = new RandomBlockSelection();
         }
-        this.anySet = new DataNodeArray(blockSelection);
     }
 
-    public short updateRegion(BlockInfo region) {
-        long dnAddress = region.getDnInfo().key();
-        DataNodeBlocks current = membership.get(dnAddress);
+    short addBlock(NameNodeBlockInfo block) throws Exception {
+        DataNodeBlocks current = membership.getByDataNode(block.getDnInfo());
         if (current == null) {
-            return RpcErrors.ERR_ADD_BLOCK_FAILED;
-        } else {
-            return current.updateRegion(region);
-        }
-    }
-
-    public boolean regionExists(BlockInfo region) {
-        long dnAddress = region.getDnInfo().key();
-        DataNodeBlocks current = membership.get(dnAddress);
-        if (current == null) {
-            return false;
-        } else {
-            return current.regionExists(region);
-        }
-    }
-
-    short addBlock(NameNodeBlockInfo block) throws UnknownHostException {
-        long dnAddress = block.getDnInfo().key();
-        DataNodeBlocks current = membership.get(dnAddress);
-        if (current == null) {
+            // we need to insert a new one
             current = DataNodeBlocks.fromDataNodeInfo(block.getDnInfo());
-            addDataNode(current);
+            this.membership.add(current);
+            LOG.info("adding datanode " + CrailUtils.getIPAddressFromBytes(current.getIpAddress()) + ":" + current.getPort() + " of type " + current.getStorageType() + " to storage class " + storageClass);
         }
-
         current.touch();
         current.addFreeBlock(block);
         return RpcErrors.ERR_OK;
     }
 
-    short removeDatanode(DataNodeInfo dn) {
-        long dnAddress = dn.key();
-        DataNodeBlocks old = membership.remove(dnAddress);
+    short removeDatanode(DataNodeInfo dn) throws Exception {
+        DataNodeBlocks old = membership.remove(dn);
         if (old == null) {
             System.err.println("DataNode: " + dn.toString() + " not found");
             return RpcErrors.ERR_DATANODE_NOT_REGISTERED;
@@ -158,55 +118,25 @@ class PocketStorageClass {
 
     NameNodeBlockInfo getBlock(int affinity) throws InterruptedException {
         NameNodeBlockInfo block = null;
-        if (affinity == 0) {
-            block = anySet.get();
-        } else {
-            block = _getAffinityBlock(affinity);
-            if (block == null) {
-                block = anySet.get();
-            } else {
+        int size = this.membership.size();
+        if (size > 0) {
+            int startIndex = blockSelection.getNext(size);
+            for (int i = 0; i < size; i++) {
+                int index = (startIndex + i) % size;
+                DataNodeBlocks anyDn = this.membership.getByIndex(index);
+                if (anyDn.isOnline()) {
+                    block = anyDn.getFreeBlock();
+                }
+                if (block != null) {
+                    break;
+                }
             }
         }
         return block;
     }
 
     DataNodeBlocks getDataNode(DataNodeInfo dataNode) {
-        return membership.get(dataNode.key());
-    }
-
-    short addDataNode(DataNodeBlocks dataNode) {
-        DataNodeBlocks current = membership.putIfAbsent(dataNode.key(), dataNode);
-        if (current != null) {
-            return RpcErrors.ERR_DATANODE_NOT_REGISTERED;
-        }
-        // current == null, datanode not in set, adding it now
-        _addDataNode(dataNode);
-        return RpcErrors.ERR_OK;
-    }
-
-    //---------------
-
-    private void _addDataNode(DataNodeBlocks dataNode) {
-        LOG.info("adding datanode " + CrailUtils.getIPAddressFromBytes(dataNode.getIpAddress()) + ":" + dataNode.getPort() + " of type " + dataNode.getStorageType() + " to storage class " + storageClass);
-        DataNodeArray hostMap = affinitySets.get(dataNode.getLocationClass());
-        if (hostMap == null) {
-            hostMap = new DataNodeArray(blockSelection);
-            DataNodeArray oldMap = affinitySets.putIfAbsent(dataNode.getLocationClass(), hostMap);
-            if (oldMap != null) {
-                hostMap = oldMap;
-            }
-        }
-        hostMap.add(dataNode);
-        anySet.add(dataNode);
-    }
-
-    private NameNodeBlockInfo _getAffinityBlock(int affinity) throws InterruptedException {
-        NameNodeBlockInfo block = null;
-        DataNodeArray affinitySet = affinitySets.get(affinity);
-        if (affinitySet != null) {
-            block = affinitySet.get();
-        }
-        return block;
+        return membership.getByDataNode(dataNode);
     }
 
     public interface BlockSelection {
@@ -216,7 +146,7 @@ class PocketStorageClass {
     private class RoundRobinBlockSelection implements BlockSelection {
         private AtomicIntegerModulo counter;
 
-        public RoundRobinBlockSelection() {
+        RoundRobinBlockSelection() {
             LOG.info("round robin block selection");
             counter = new AtomicIntegerModulo();
         }
@@ -228,7 +158,7 @@ class PocketStorageClass {
     }
 
     private class RandomBlockSelection implements BlockSelection {
-        public RandomBlockSelection() {
+        RandomBlockSelection() {
             LOG.info("random block selection");
         }
 
@@ -238,45 +168,79 @@ class PocketStorageClass {
         }
     }
 
-    private class DataNodeArray {
-        private ArrayList<DataNodeBlocks> arrayList;
+    private class ConcurrentIndexedHashMap {
+        // this is the hashmap from long -> DataNodeBlocks
+        private HashMap<Long, DataNodeBlocks> membership;
+        // then we need int index -> long map
+        private ArrayList<Long> indexToLong;
         private ReentrantReadWriteLock lock;
-        private BlockSelection blockSelection;
 
-        public DataNodeArray(BlockSelection blockSelection) {
-            this.arrayList = new ArrayList<DataNodeBlocks>();
+        ConcurrentIndexedHashMap() {
+            this.indexToLong = new ArrayList<>();
+            this.membership = new HashMap<>();
             this.lock = new ReentrantReadWriteLock();
-            this.blockSelection = blockSelection;
         }
 
-        public void add(DataNodeBlocks dataNode) {
+        private void sanityCheck() throws Exception{
+            if(this.membership.size() != this.indexToLong.size()){
+                LOG.error(" Something went wrong in insertion ");
+                throw new Exception();
+            }
+        }
+
+        int size() {
+            return this.membership.size();
+        }
+
+        void add(DataNodeBlocks dataNode) throws Exception{
             lock.writeLock().lock();
             try {
-                arrayList.add(dataNode);
+                boolean isThere = this.membership.containsKey(dataNode.key());
+                if(!isThere){
+                    this.membership.put(dataNode.key(), dataNode);
+                    // this will give it an index
+                    this.indexToLong.add(dataNode.key());
+                }// otherwise we don't have to do anything
             } finally {
+                sanityCheck();
                 lock.writeLock().unlock();
             }
         }
 
-        private NameNodeBlockInfo get() throws InterruptedException {
+        DataNodeBlocks remove(DataNodeInfo dataNode) throws Exception {
+            DataNodeBlocks retValue = null;
+            lock.writeLock().lock();
+            try {
+                boolean isThere = this.membership.containsKey(dataNode.key());
+                if(isThere){
+                    // if it was in there then remove it from both data strucutres
+                    retValue = this.membership.remove(dataNode.key());
+                    this.indexToLong.remove(dataNode.key());
+                }else {
+                    retValue = null;
+                    LOG.error("bad stuff");
+                }
+            } finally {
+                sanityCheck();
+                lock.writeLock().unlock();
+            }
+            return retValue;
+        }
+
+        DataNodeBlocks getByIndex(int index) {
             lock.readLock().lock();
             try {
-                NameNodeBlockInfo block = null;
-                int size = arrayList.size();
-                if (size > 0) {
-                    int startIndex = blockSelection.getNext(size);
-                    for (int i = 0; i < size; i++) {
-                        int index = (startIndex + i) % size;
-                        DataNodeBlocks anyDn = arrayList.get(index);
-                        if (anyDn.isOnline()) {
-                            block = anyDn.getFreeBlock();
-                        }
-                        if (block != null) {
-                            break;
-                        }
-                    }
-                }
-                return block;
+                return this.membership.get(this.indexToLong.get(index));
+            } finally {
+                lock.readLock().unlock();
+            }
+        }
+
+        DataNodeBlocks getByDataNode(DataNodeInfo dn) {
+            lock.readLock().lock();
+            try {
+                return this.membership.get(dn.key());
+                // something
             } finally {
                 lock.readLock().unlock();
             }

@@ -435,8 +435,8 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 		System.err.println(" ### " + region.getDnInfo().toString());
 		
 		short error = RpcErrors.ERR_OK;
-		if (blockStore.regionExists(region)){
-			error = blockStore.updateRegion(region);
+		if (CrailConstants.NAMENODE_REPLAY_REGION){
+			throw new Exception("NYI: update region on the pocket block store.");
 		} else {
 			//rpc
 			int realBlocks = (int) (((long) region.getLength()) / CrailConstants.BLOCK_SIZE) ;
@@ -595,7 +595,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 
 	//--------------- helper functions
 
-	private short prepareDataNodeForRemoval(IOCtlCommand.RemoveDataNode dn){
+	private short prepareDataNodeForRemoval(IOCtlCommand.RemoveDataNode dn) throws Exception {
 		LOG.info("IOCTL: removing data node: " + dn);
 		DataNodeInfo dnInfo = new DataNodeInfo(0, 0, 0, dn.getIPAddress().getAddress(), dn.port());
 		return blockStore.removeDN(dnInfo);
