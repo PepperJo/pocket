@@ -45,7 +45,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 	private long serviceId;
 	private long serviceSize;
 	private AtomicLong sequenceId;
-	private BlockStore blockStore;
+	private PocketBlockStore blockStore;
 	private DelayQueue<AbstractNode> deleteQueue;
 	private FileStore fileTree;
 	private ConcurrentHashMap<Long, AbstractNode> fileTable;	
@@ -58,7 +58,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 		this.serviceId = Long.parseLong(tokenizer.nextToken().substring(3));
 		this.serviceSize = Long.parseLong(tokenizer.nextToken().substring(5));
 		this.sequenceId = new AtomicLong(serviceId);
-		this.blockStore = new BlockStore();
+		this.blockStore = new PocketBlockStore();
 		this.deleteQueue = new DelayQueue<AbstractNode>();
 		this.fileTree = new FileStore(this);
 		this.fileTable = new ConcurrentHashMap<Long, AbstractNode>();
