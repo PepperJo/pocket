@@ -132,13 +132,13 @@ public class CrailFsck {
 		fs.closeFileSystem();		
 	}
 
-	public void IOCtlRemoveDN(InetAddress datanode) throws Exception {
+	public void IOCtlRemoveDN(InetAddress datanode, int port) throws Exception {
 		CrailConfiguration conf = new CrailConfiguration();
 		CrailConstants.updateConstants(conf);
 		CoreDataStore fs = new CoreDataStore(conf);
-		IOCtlCommand.RemoveDataNode cmd = new IOCtlCommand.RemoveDataNode(datanode);
+		IOCtlCommand.RemoveDataNode cmd = new IOCtlCommand.RemoveDataNode(datanode, port);
 		fs.ioctlNameNode(cmd);
-		System.out.println("Datanode at : " + cmd.getIPAddress() + " removed successfully");
+		System.out.println("Datanode at : " + cmd.getIPAddress() + "/port: " + port + " scheduled for removal successfully");
 		fs.closeFileSystem();
 	}
 	
@@ -186,6 +186,7 @@ public class CrailFsck {
 	
 	public static void main(String[] args) throws Exception {
 		InetAddress datanodeAddress = null;
+		int port = 50020; // the default TCP port number
 		String type = "";
 		String filename = "/tmp.dat";
 		long offset = 0;
@@ -201,6 +202,7 @@ public class CrailFsck {
 		Option lengthOption = Option.builder("l").desc("length of the file [bytes]").hasArg().build();
 		Option storageOption = Option.builder("c").desc("storageClass for file [1..n]").hasArg().build();
 		Option locationOption = Option.builder("p").desc("locationClass for file [1..n]").hasArg().build();
+		Option portOption = Option.builder("P").desc("port of the datanode to eject").hasArg().build();
 		Option helpOption = Option.builder("h").desc("show help").build();
 		
 		Options options = new Options();
@@ -212,6 +214,7 @@ public class CrailFsck {
 		options.addOption(storageOption);
 		options.addOption(locationOption);
 		options.addOption(helpOption);
+		options.addOption(portOption);
 		
 		CommandLineParser parser = new DefaultParser();
 		CommandLine line = parser.parse(options, Arrays.copyOfRange(args, 0, args.length));
@@ -223,6 +226,9 @@ public class CrailFsck {
 		}
 		if (line.hasOption(dataNodeOption.getOpt())) {
 			datanodeAddress = InetAddress.getByName(line.getOptionValue(dataNodeOption.getOpt()));
+		}
+		if (line.hasOption(portOption.getOpt())) {
+			port = Integer.parseInt(line.getOptionValue(portOption.getOpt()));
 		}
 		if (line.hasOption(offsetOption.getOpt())) {
 			offset = Long.parseLong(line.getOptionValue(offsetOption.getOpt()));
@@ -256,7 +262,7 @@ public class CrailFsck {
 		} else if (type.equals("createDirectory")){
 			fsck.createDirectory(filename, storageClass, locationClass);
 		} else if (type.equals("removeDataNode")){
-			fsck.IOCtlRemoveDN(datanodeAddress);
+			fsck.IOCtlRemoveDN(datanodeAddress, port);
 		} else {
 			HelpFormatter formatter = new HelpFormatter();
 			formatter.printHelp("crail fsck", options);

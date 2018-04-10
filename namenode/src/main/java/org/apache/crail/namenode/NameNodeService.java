@@ -586,7 +586,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 
 			case IOCtlCommand.DN_REMOVE :
 				IOCtlCommand.RemoveDataNode dn = (IOCtlCommand.RemoveDataNode) request.getIOCtlCommand();
-				return prepareDataNodeForRemoval(dn.getIPAddress());
+				return prepareDataNodeForRemoval(dn);
 
 			default: throw new NotImplementedException();
 		}
@@ -595,11 +595,9 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 
 	//--------------- helper functions
 
-	private short prepareDataNodeForRemoval(InetAddress address){
-		System.err.println("Removing data node: " + address);
-		//int storageType, int storageClass, int locationClass, byte[] ipAddress, int port
-		DataNodeInfo dnInfo = new DataNodeInfo(0, 0, 0, address.getAddress(), 50020);
-		// BlockStore is the key entry point
+	private short prepareDataNodeForRemoval(IOCtlCommand.RemoveDataNode dn){
+		LOG.info("IOCTL: removing data node: " + dn);
+		DataNodeInfo dnInfo = new DataNodeInfo(0, 0, 0, dn.getIPAddress().getAddress(), dn.port());
 		return blockStore.removeDN(dnInfo);
 	}
 	

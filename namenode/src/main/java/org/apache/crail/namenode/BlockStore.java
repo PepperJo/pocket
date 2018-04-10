@@ -167,10 +167,11 @@ class StorageClass {
 		DataNodeBlocks old = membership.remove(dnAddress);
 		if(old == null) {
 			System.err.println("DataNode: " + dn.toString() + " not found");
+			return RpcErrors.ERR_DATANODE_NOT_REGISTERED;
 		} else {
-			System.err.println("DataNode: " + dn.toString() + " removed from the list");
+			System.err.println("DataNode: " + dn.toString() + " scheduled for removal from the list");
+			return RpcErrors.ERR_OK;
 		}
-		return RpcErrors.ERR_OK;
 	}
 
 	NameNodeBlockInfo getBlock(int affinity) throws InterruptedException {

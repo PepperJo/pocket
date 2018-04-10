@@ -17,35 +17,43 @@ public abstract class IOCtlCommand {
     public abstract int getSize();
 
     public static class RemoveDataNode extends IOCtlCommand {
-        // 4 bytes for the IP address of the datanode
-        public static int CSIZE = 4;
+        // 4 byte IP + 4 byte port (java short are signed hence, we need 4 byte numbers
+        public static int CSIZE = 8;
         private InetAddress address;
+        private int port;
 
         RemoveDataNode(){
             this.address = null;
+            this.port = -1;
         }
 
-        public RemoveDataNode(InetAddress address){
+        public RemoveDataNode(InetAddress address, int port){
             this.address = address;
+            this.port = port;
         }
 
         public InetAddress getIPAddress(){
             return this.address;
         }
 
+        public int port(){
+            return this.port;
+        }
+
         public int write(ByteBuffer buffer) throws IOException {
             byte[] x = this.address.getAddress();
-            if(x.length > buffer.remaining()) {
-                throw new IOException("Write ByteBuffer is too small, remaining " + buffer.remaining() + " expected, " + x.length + " bytes");
+            if(RemoveDataNode.CSIZE > buffer.remaining()) {
+                throw new IOException("Write ByteBuffer is too small, remaining " + buffer.remaining() + " expected, " + RemoveDataNode.CSIZE + " bytes");
             }
             buffer.put(x);
-            return x.length;
+            buffer.putInt(this.port);
+            return RemoveDataNode.CSIZE;
         }
 
         public void update(ByteBuffer buffer) throws IOException {
-            byte[] barr = new byte[getSize()];
+            byte[] barr = new byte[4]; // 4 bytes for the IP address
             if(getSize() > buffer.remaining()) {
-                throw new IOException("Read ByteBuffer is too small, remaining " + buffer.remaining() + " expected, " + barr.length + " bytes");
+                throw new IOException("Read ByteBuffer is too small, remaining " + buffer.remaining() + " expected, " + getSize() + " bytes");
             }
             buffer.get(barr);
             try {
@@ -53,6 +61,7 @@ public abstract class IOCtlCommand {
             } catch (UnknownHostException e) {
                 e.printStackTrace();
             }
+            this.port = buffer.getInt();
         }
 
         public int getSize(){
@@ -60,7 +69,7 @@ public abstract class IOCtlCommand {
         }
 
         public String toString(){
-            return "removeDN: " + (this.address == null ? " N/A" : this.address.toString());
+            return "removeDN: " + (this.address == null ? " N/A" : (this.address.toString() + "/port: " + this.port));
         }
     }
 
