@@ -56,6 +56,11 @@ public class RpcErrors {
 	public static short ERR_DIR_LOCATION_AFFINITY_MISMATCH = 26;
 	public static short ERR_ADD_BLOCK_FAILED = 27;
 	public static short ERR_CREATE_FILE_BUG = 28;
+
+	// more error codes which are used by the datanode side for operations
+	public static short ERR_DN_IOCTL_STOP = -100;
+	public static short ERR_DN_IOCTL_ADD_CORE = -101;
+	public static short ERR_DN_IOCTL_REMOVE_CORE = -102;
 	
 	static {
 		messages[ERR_OK] = "ERROR: No error, all fine";

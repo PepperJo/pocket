@@ -104,7 +104,11 @@ public class DataNodeBlocks extends DataNodeInfo {
 	public void touch() {
 		this.token = System.nanoTime() + TimeUnit.SECONDS.toNanos(CrailConstants.STORAGE_KEEPALIVE * 8);
 	}
-	
+
+	public boolean isScheduleForRemoval(){
+		return this.scheduleForRemoval;
+	}
+
 	public boolean isOnline(){
 		return (System.nanoTime() <= token) && !this.scheduleForRemoval;
 	}	

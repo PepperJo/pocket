@@ -400,18 +400,27 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 		//check protocol
 		if (!RpcProtocol.verifyProtocol(RpcProtocol.CMD_GET_DATANODE, request, response)){
 			return RpcErrors.ERR_PROTOCOL_MISMATCH;
-		}			
-		
+		}
 		//get params
 		DataNodeInfo dnInfo = request.getInfo();
-		
 		//rpc
 		DataNodeBlocks dnInfoNn = blockStore.getDataNode(dnInfo);
 		if (dnInfoNn == null){
 			System.err.println(" Datanode no longer registered ");
 			return RpcErrors.ERR_DATANODE_NOT_REGISTERED;
 		}
-		
+		// here is our control hack
+		if(dnInfoNn.isScheduleForRemoval()){
+			// we now check if we have a possibility to eject it now
+			if(dnInfoNn.safeForRemoval()){
+				// now we eject it from everywhere
+				blockStore.removeDataNode(dnInfo);
+				response.setServiceId(serviceId);
+				// we are abusing the free block count
+				response.setFreeBlockCount(RpcErrors.ERR_DN_IOCTL_STOP);
+				return RpcErrors.ERR_OK;
+			} // otherwise we have to wait until all block are not free
+		}
 		dnInfoNn.touch();
 		response.setServiceId(serviceId);
 		response.setFreeBlockCount(dnInfoNn.getBlockCount());
@@ -598,7 +607,7 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 	private short prepareDataNodeForRemoval(IOCtlCommand.RemoveDataNode dn) throws Exception {
 		LOG.info("IOCTL: removing data node: " + dn);
 		DataNodeInfo dnInfo = new DataNodeInfo(0, 0, 0, dn.getIPAddress().getAddress(), dn.port());
-		return blockStore.removeDN(dnInfo);
+		return blockStore.prepareDataNodeForRemoval(dnInfo);
 	}
 	
 	void appendToDeleteQueue(AbstractNode fileInfo) throws Exception {

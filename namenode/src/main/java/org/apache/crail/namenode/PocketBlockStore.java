@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -28,9 +29,14 @@ public class PocketBlockStore {
         }
     }
 
-    short removeDN(DataNodeInfo dn) throws Exception {
+    short removeDataNode(DataNodeInfo dn) throws Exception {
         int storageClass = dn.getStorageClass();
         return storageClasses[storageClass].removeDatanode(dn);
+    }
+
+    short prepareDataNodeForRemoval(DataNodeInfo dn) throws Exception {
+        int storageClass = dn.getStorageClass();
+        return storageClasses[storageClass].prepareForRemovalDatanode(dn);
     }
 
     short addBlock(NameNodeBlockInfo blockInfo) throws Exception {
@@ -105,15 +111,28 @@ class PocketStorageClass {
         return RpcErrors.ERR_OK;
     }
 
+    short prepareForRemovalDatanode(DataNodeInfo dn) throws Exception {
+        // this will only mark it for removal
+        return _prepareOrRemoveDN(dn, true);
+    }
+
     short removeDatanode(DataNodeInfo dn) throws Exception {
-        DataNodeBlocks old = membership.remove(dn);
-        if (old == null) {
+        // this will remove it as well
+        return _prepareOrRemoveDN(dn, false);
+    }
+
+    private short _prepareOrRemoveDN(DataNodeInfo dn, boolean onlyMark) throws Exception {
+        DataNodeBlocks toBeRemoved = membership.getByDataNode(dn);
+        if (toBeRemoved == null) {
             System.err.println("DataNode: " + dn.toString() + " not found");
             return RpcErrors.ERR_DATANODE_NOT_REGISTERED;
         } else {
-            System.err.println("DataNode: " + dn.toString() + " scheduled for removal from the list");
-            return RpcErrors.ERR_OK;
+            if (onlyMark)
+                toBeRemoved.scheduleForRemoval();
+            else
+                membership.remove(toBeRemoved);
         }
+        return RpcErrors.ERR_OK;
     }
 
     NameNodeBlockInfo getBlock(int affinity) throws InterruptedException {
