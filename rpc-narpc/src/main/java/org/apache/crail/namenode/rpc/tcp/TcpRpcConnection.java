@@ -52,6 +52,7 @@ public class TcpRpcConnection implements RpcConnection {
 	}
 
 	public void close() throws IOException {
+		LOG.info("Closing the namenode side client connection: " + this.endpoint.address());
 		this.endpoint.close();
 	}
 

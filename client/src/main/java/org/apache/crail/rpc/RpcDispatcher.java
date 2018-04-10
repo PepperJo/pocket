@@ -137,7 +137,6 @@ public class RpcDispatcher implements RpcConnection {
 
 	@Override
 	public RpcFuture<RpcVoid> ioctlNameNode(IOCtlCommand cmd) throws IOException {
-		System.err.println(" I am here with : " + cmd.getClass().getCanonicalName());
 		throw new IOException();
 	}
 

@@ -108,17 +108,30 @@ public class TcpStorageServer implements Runnable, StorageServer, NaRPCService<T
 	}
 
 	@Override
+	public void prepareToShutDown(){
+		this.alive = false;
+		// do more clean up, if required
+		try {
+			serverEndpoint.close();
+			serverGroup.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Override
 	public void run() {
 		try {
 			LOG.info("running TCP storage server, address " + address);
 			this.alive = true;
-			while(true){
+			while(this.alive){
 				NaRPCServerChannel endpoint = serverEndpoint.accept();
 				LOG.info("new connection " + endpoint.address());
 			}
 		} catch(Exception e){
 			e.printStackTrace();
 		}
+		LOG.info("Shutting down the datanode at address " + address);
 	}
 
 	@Override
