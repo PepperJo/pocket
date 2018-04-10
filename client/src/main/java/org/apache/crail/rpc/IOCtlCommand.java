@@ -11,6 +11,7 @@ import java.nio.ByteBuffer;
 public abstract class IOCtlCommand {
     public static final byte NOP       = 1;
     public static final byte DN_REMOVE = 2;
+    public static final byte NN_GET_CLASS_STAT = 3;
 
     public abstract int write(ByteBuffer buffer) throws IOException;
     public abstract void update(ByteBuffer buffer) throws IOException;
@@ -76,6 +77,10 @@ public abstract class IOCtlCommand {
     public static class GetClassStatCommand extends IOCtlCommand {
         public static int CSIZE = 4;
         private int storageClass;
+
+        public GetClassStatCommand (){
+            this.storageClass = -1;
+        }
 
         public GetClassStatCommand (int storageClass){
             this.storageClass = storageClass;

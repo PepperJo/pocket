@@ -654,7 +654,7 @@ public class RpcResponseMessage {
 		private short error;
 
 		public IOCtlNameNodeRes() {
-			this.resp = new IOCtlResponse.IOCtlEmptyResp();
+			this.resp = new IOCtlResponse.IOCtlDataNodeRemoveResp();
 			this.opcode = IOCtlCommand.NOP;
 			this.error = -1;
 		}
@@ -695,10 +695,10 @@ public class RpcResponseMessage {
 			/* which type ? */
 			switch (this.opcode) {
 				case IOCtlCommand.DN_REMOVE:
-					this.resp = new IOCtlResponse.IOCtlEmptyResp();
+					this.resp = new IOCtlResponse.IOCtlDataNodeRemoveResp();
 					break;
-				case IOCtlCommand.NOP:
-					this.resp = new IOCtlResponse.IOCtlEmptyResp();
+				case IOCtlCommand.NN_GET_CLASS_STAT:
+					this.resp = new IOCtlResponse.GetClassStatResp();
 					break;
 				default:
 					throw new IOException("NYI: ioctl opcode " + this.opcode);
@@ -713,6 +713,11 @@ public class RpcResponseMessage {
 
 		public void setResponse(IOCtlResponse resp){
 			this.resp = resp;
+			if(resp instanceof IOCtlResponse.GetClassStatResp){
+				this.opcode = IOCtlCommand.NN_GET_CLASS_STAT;
+			} else if(resp instanceof IOCtlResponse.IOCtlDataNodeRemoveResp){
+				this.opcode = IOCtlCommand.DN_REMOVE;
+			}
 		}
 
 		public short getError(){

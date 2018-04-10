@@ -31,15 +31,7 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.apache.crail.CrailBlockLocation;
-import org.apache.crail.CrailDirectory;
-import org.apache.crail.CrailStore;
-import org.apache.crail.CrailFile;
-import org.apache.crail.CrailLocationClass;
-import org.apache.crail.CrailMultiFile;
-import org.apache.crail.CrailNode;
-import org.apache.crail.CrailNodeType;
-import org.apache.crail.CrailStorageClass;
+import org.apache.crail.*;
 import org.apache.crail.conf.CrailConfiguration;
 import org.apache.crail.conf.CrailConstants;
 import org.apache.crail.core.CoreDataStore;
@@ -147,6 +139,8 @@ public class CrailFsck {
 		CrailConstants.updateConstants(conf);
 		CoreDataStore fs = new CoreDataStore(conf);
 		IOCtlCommand.GetClassStatCommand cmd = new IOCtlCommand.GetClassStatCommand(storageClass);
+		IOCtlResponse.GetClassStatResp stats = (IOCtlResponse.GetClassStatResp) fs.ioctlNameNode(cmd);
+		System.out.println(stats);
 		fs.closeFileSystem();
 	}
 	

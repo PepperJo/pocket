@@ -190,7 +190,7 @@ public class TcpRpcConnection implements RpcConnection {
 	@Override
 	public RpcFuture<RpcIoctl> ioctlNameNode(IOCtlCommand cmd) throws IOException {
 		RpcRequestMessage.IoctlNameNodeReq req = new RpcRequestMessage.IoctlNameNodeReq();
-		req.setRemoveDatanode((IOCtlCommand.RemoveDataNode) cmd);
+		req.setIoctlCommand(cmd);
 		RpcResponseMessage.IOCtlNameNodeRes resp = new RpcResponseMessage.IOCtlNameNodeRes();
 
 		TcpNameNodeRequest request = new TcpNameNodeRequest(req);

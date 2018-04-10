@@ -28,6 +28,7 @@ import java.util.concurrent.DelayQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.crail.CrailNodeType;
+import org.apache.crail.IOCtlResponse;
 import org.apache.crail.conf.CrailConstants;
 import org.apache.crail.metadata.BlockInfo;
 import org.apache.crail.metadata.DataNodeInfo;
@@ -596,7 +597,14 @@ public class NameNodeService implements RpcNameNodeService, Sequencer {
 
 			case IOCtlCommand.DN_REMOVE :
 				IOCtlCommand.RemoveDataNode dn = (IOCtlCommand.RemoveDataNode) request.getIOCtlCommand();
+				IOCtlResponse.IOCtlDataNodeRemoveResp resp = new IOCtlResponse.IOCtlDataNodeRemoveResp();
+				response.setResponse(resp);
 				return prepareDataNodeForRemoval(dn);
+
+			case IOCtlCommand.NN_GET_CLASS_STAT:
+				IOCtlResponse.GetClassStatResp stat = new IOCtlResponse.GetClassStatResp(8, 4);
+				response.setResponse(stat);
+				return RpcErrors.ERR_OK;
 
 			default: throw new NotImplementedException();
 		}

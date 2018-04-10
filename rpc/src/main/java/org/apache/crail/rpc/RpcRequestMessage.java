@@ -584,9 +584,13 @@ public class RpcRequestMessage {
 			this.cmd = new IOCtlCommand.NoOpCommand();
 		}
 
-		public void setRemoveDatanode(IOCtlCommand.RemoveDataNode ops) {
-			this.opcode = IOCtlCommand.DN_REMOVE;
+		public void setIoctlCommand(IOCtlCommand ops){
 			this.cmd = ops;
+			if (ops instanceof IOCtlCommand.RemoveDataNode) {
+				this.opcode = IOCtlCommand.DN_REMOVE;
+			} else if (ops instanceof IOCtlCommand.GetClassStatCommand) {
+				this.opcode = IOCtlCommand.NN_GET_CLASS_STAT;
+			}
 		}
 
 		public byte getOpcode() {
@@ -629,6 +633,9 @@ public class RpcRequestMessage {
 					break;
 				case IOCtlCommand.NOP:
 					this.cmd = new IOCtlCommand.NoOpCommand();
+					break;
+				case IOCtlCommand.NN_GET_CLASS_STAT:
+					this.cmd = new IOCtlCommand.GetClassStatCommand();
 					break;
 				default:
 					throw new IOException("NYI: ioctl opcode " + this.opcode);
